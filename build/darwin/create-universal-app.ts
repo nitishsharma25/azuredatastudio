@@ -89,10 +89,12 @@ async function main() {
 
 	// Verify if native module architecture is correct
 	const findOutput = await spawn('find', [outAppPath, '-name', 'keytar.node']);
-	const lipoOutput = await spawn('lipo', ['-archs', findOutput.replace(/\n$/, '')]);
-	if (lipoOutput.replace(/\n$/, '') !== 'x86_64 arm64') {
-		throw new Error(`Invalid arch, got : ${lipoOutput}`);
-	}
+	findOutput.split('\n').forEach(async (line: string) => {
+		const lipoOutput = await spawn('lipo', ['-archs', line.replace(/\n$/, '')]);
+		if (lipoOutput.replace(/\n$/, '') !== 'x86_64 arm64') {
+			throw new Error(`Invalid arch, got : ${lipoOutput}`);
+		}
+	});
 
 	// {{SQL CARBON EDIT}}
 	console.debug(`Copying SqlToolsService to the universal app folder.`);
