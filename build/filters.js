@@ -27,6 +27,7 @@ module.exports.all = [
 	'!**/node_modules/**',
 
 	// {{SQL CARBON EDIT}}
+	'!extensions/**/out*/**',
 	'!build/actions/**/*.js',
 	'!build/**/*'
 ];
