@@ -172,13 +172,10 @@ suite('Notebook Editor Model', function (): void {
 			serializationManagers: serializationManagers,
 			executeManagers: executeManagers,
 			contentLoader: undefined,
-			notificationService: notificationService.object,
-			connectionService: queryConnectionService.object,
 			providerId: 'SQL',
 			cellMagicMapper: undefined,
 			defaultKernel: undefined,
 			layoutChanged: undefined,
-			capabilitiesService: capabilitiesService.object,
 			getInputLanguageMode: () => undefined
 		};
 	});
@@ -991,7 +988,7 @@ suite('Notebook Editor Model', function (): void {
 		let mockNotebookService = TypeMoq.Mock.ofType(NotebookServiceStub);
 		mockNotebookService.setup(s => s.onNotebookKernelsAdded).returns(() => new Emitter<IStandardKernelWithProvider[]>().event);
 
-		notebookModel = new NotebookModel(options, undefined, logService, undefined, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undoRedoService, mockNotebookService.object, undefined, undefined);
+		notebookModel = new NotebookModel(options, undefined, logService, notificationService.object, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undoRedoService, mockNotebookService.object, capabilitiesService.object, undefined);
 		await notebookModel.loadContents();
 	}
 

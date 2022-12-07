@@ -112,16 +112,13 @@ suite('Notebook Find Model', function (): void {
 			serializationManagers: serializationManagers,
 			executeManagers: executeManagers,
 			contentLoader: undefined,
-			notificationService: notificationService.object,
-			connectionService: queryConnectionService.object,
 			providerId: 'SQL',
 			cellMagicMapper: undefined,
 			defaultKernel: undefined,
 			layoutChanged: undefined,
-			capabilitiesService: capabilitiesService.object,
 			getInputLanguageMode: () => undefined
 		};
-		mockClientSession = TypeMoq.Mock.ofType<IClientSession>(ClientSession, undefined, defaultModelOptions);
+		mockClientSession = TypeMoq.Mock.ofType<IClientSession>(ClientSession, undefined, defaultModelOptions, notificationService.object);
 		mockClientSession.setup(c => c.initialize()).returns(() => {
 			return Promise.resolve();
 		});
@@ -620,7 +617,7 @@ suite('Notebook Find Model', function (): void {
 		mockNotebookService.setup(s => s.onNotebookKernelsAdded).returns(() => new Emitter<IStandardKernelWithProvider[]>().event);
 
 		// Initialize the model
-		model = new NotebookModel(defaultModelOptions, undefined, logService, undefined, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undefined, mockNotebookService.object, undefined, undefined);
+		model = new NotebookModel(defaultModelOptions, undefined, logService, notificationService.object, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undefined, mockNotebookService.object, capabilitiesService.object, undefined);
 		await model.loadContents();
 		await model.requestModelLoad();
 	}

@@ -14,6 +14,7 @@ import { IClientSession, IClientSessionOptions } from 'sql/workbench/services/no
 import { Deferred } from 'sql/base/common/promise';
 import { IExecuteManager } from 'sql/workbench/services/notebook/browser/notebookService';
 import { IConnectionProfile } from 'sql/platform/connection/common/interfaces';
+import { INotificationService } from 'vs/platform/notification/common/notification';
 
 type KernelChangeHandler = (kernel: nb.IKernelChangedArgs) => Promise<void>;
 /**
@@ -42,7 +43,7 @@ export class ClientSession implements IClientSession {
 
 	private readonly _kernelNotFoundError = 501;
 
-	constructor(private options: IClientSessionOptions) {
+	constructor(private options: IClientSessionOptions, @INotificationService private notificationService: INotificationService) {
 		this._notebookUri = options.notebookUri;
 		this._executeManager = options.executeManager;
 		this._isReady = false;
@@ -108,7 +109,7 @@ export class ClientSession implements IClientSession {
 		} catch (err) {
 			// TODO move registration
 			if (err.response?.status === this._kernelNotFoundError || err.errorCode === this._kernelNotFoundError) {
-				this.options.notificationService.warn(localize('kernelRequiresConnection', "Kernel '{0}' was not found. The default kernel will be used instead.", kernelSpec.name));
+				this.notificationService.warn(localize('kernelRequiresConnection', "Kernel '{0}' was not found. The default kernel will be used instead.", kernelSpec.name));
 				session = await this._executeManager.sessionManager.startNew({
 					path: this.notebookUri.fsPath,
 					kernelName: undefined
@@ -290,10 +291,10 @@ export class ClientSession implements IClientSession {
 		}
 		let restartCompleted = new Deferred<void>();
 		this._session?.kernel?.restart().then(() => {
-			this.options.notificationService.info(localize('kernelRestartedSuccessfully', 'Kernel restarted successfully'));
+			this.notificationService.info(localize('kernelRestartedSuccessfully', 'Kernel restarted successfully'));
 			restartCompleted.resolve();
 		}, err => {
-			this.options.notificationService.error(localize('kernelRestartFailed', 'Kernel restart failed: {0}', err));
+			this.notificationService.error(localize('kernelRestartFailed', 'Kernel restart failed: {0}', err));
 			restartCompleted.reject(err);
 		});
 		return restartCompleted.promise;

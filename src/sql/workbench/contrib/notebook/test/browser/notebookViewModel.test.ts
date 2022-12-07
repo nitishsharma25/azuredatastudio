@@ -240,20 +240,16 @@ suite('NotebookViewModel', function (): void {
 		});
 		instantiationService.stub(ILanguageService, new class extends mock<ILanguageService>() { });
 
-
 		defaultModelOptions = {
 			notebookUri: defaultUri,
 			factory: new ModelFactory(instantiationService),
 			serializationManagers: serializationManagers,
 			executeManagers: executeManagers,
 			contentLoader: undefined,
-			notificationService: notificationService.object,
-			connectionService: queryConnectionService.object,
 			providerId: 'SQL',
 			cellMagicMapper: undefined,
 			defaultKernel: undefined,
 			layoutChanged: undefined,
-			capabilitiesService: capabilitiesService.object,
 			getInputLanguageMode: () => undefined
 		};
 	}
@@ -265,7 +261,7 @@ suite('NotebookViewModel', function (): void {
 		let mockNotebookService = TypeMoq.Mock.ofType(NotebookServiceStub);
 		mockNotebookService.setup(s => s.onNotebookKernelsAdded).returns(() => new Emitter<IStandardKernelWithProvider[]>().event);
 
-		let model = new NotebookModel(defaultModelOptions, undefined, logService, undefined, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undefined, mockNotebookService.object, undefined, undefined);
+		let model = new NotebookModel(defaultModelOptions, undefined, logService, notificationService.object, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undefined, mockNotebookService.object, capabilitiesService.object, undefined);
 		await model.loadContents();
 		await model.requestModelLoad();
 

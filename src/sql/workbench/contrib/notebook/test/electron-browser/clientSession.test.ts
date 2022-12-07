@@ -35,9 +35,8 @@ suite('Client Session', function (): void {
 		session = new ClientSession({
 			executeManager: notebookManager,
 			notebookUri: path,
-			notificationService: notificationService.object,
 			kernelSpec: { name: 'python', display_name: 'Python 3', language: 'python' }
-		});
+		}, notificationService.object);
 
 		let serverlessNotebookManager = new ExecuteManagerStub();
 		serverlessNotebookManager.sessionManager = mockSessionManager.object;
@@ -170,9 +169,8 @@ suite('Client Session', function (): void {
 		let remoteSession = new ClientSession({
 			kernelSpec: { name: 'python', display_name: 'Python 3', language: 'python' },
 			executeManager: newNotebookManager,
-			notebookUri: path,
-			notificationService: notificationService.object
-		});
+			notebookUri: path
+		}, notificationService.object);
 		await remoteSession.initialize();
 
 		// When I call shutdown

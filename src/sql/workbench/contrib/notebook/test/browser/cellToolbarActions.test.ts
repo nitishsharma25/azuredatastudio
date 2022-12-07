@@ -7,7 +7,7 @@ import * as TypeMoq from 'typemoq';
 import * as assert from 'assert';
 import { CellToggleMoreActions, RunCellsAction, removeDuplicatedAndStartingSeparators, AddCellFromContextAction, CollapseCellAction, ConvertCellAction } from 'sql/workbench/contrib/notebook/browser/cellToolbarActions';
 import { NotebookService } from 'sql/workbench/services/notebook/browser/notebookServiceImpl';
-import { INotificationService } from 'vs/platform/notification/common/notification';
+import { INotification, INotificationHandle, INotificationService } from 'vs/platform/notification/common/notification';
 import { TestNotificationService } from 'vs/platform/notification/test/common/testNotificationService';
 import { TestInstantiationService } from 'vs/platform/instantiation/test/common/instantiationServiceMock';
 import { TestLifecycleService } from 'vs/workbench/test/browser/workbenchTestServices';
@@ -245,6 +245,11 @@ export async function createandLoadNotebookModel(codeContent?: nb.INotebookConte
 		override notifyCellExecutionStarted(): void { }
 	});
 	instantiationService.stub(ILanguageService, new class extends mock<ILanguageService>() { });
+	instantiationService.stub(INotificationService, new class extends mock<INotificationService>() {
+		override notify(notification: INotification): INotificationHandle {
+			return undefined;
+		}
+	});
 
 	let mockContentManager = TypeMoq.Mock.ofType(NotebookEditorContentLoader);
 	let dialogService = TypeMoq.Mock.ofType<IDialogService>(TestDialogService, TypeMoq.MockBehavior.Loose);
@@ -258,13 +263,10 @@ export async function createandLoadNotebookModel(codeContent?: nb.INotebookConte
 		serializationManagers: [new SerializationManagerStub()],
 		executeManagers: [new ExecuteManagerStub()],
 		contentLoader: mockContentManager.object,
-		notificationService: undefined,
-		connectionService: undefined,
 		providerId: 'SQL',
 		cellMagicMapper: undefined,
 		defaultKernel: undefined,
 		layoutChanged: undefined,
-		capabilitiesService: undefined,
 		getInputLanguageMode: () => undefined
 	};
 	let mockNotebookService = TypeMoq.Mock.ofType(NotebookServiceStub);

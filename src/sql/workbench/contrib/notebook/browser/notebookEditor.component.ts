@@ -8,10 +8,7 @@ import * as notebookUtils from 'sql/workbench/services/notebook/browser/models/n
 import { AngularDisposable } from 'sql/base/browser/lifecycle';
 import { IBootstrapParams } from 'sql/workbench/services/bootstrap/common/bootstrapParams';
 import { INotebookParams, INotebookService, IExecuteManager, DEFAULT_NOTEBOOK_PROVIDER, SQL_NOTEBOOK_PROVIDER, ISerializationManager } from 'sql/workbench/services/notebook/browser/notebookService';
-import { IConnectionManagementService } from 'sql/platform/connection/common/connectionManagement';
 import { CellMagicMapper } from 'sql/workbench/contrib/notebook/browser/models/cellMagicMapper';
-import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ICapabilitiesService } from 'sql/platform/capabilities/common/capabilitiesService';
 import { IModelFactory, ViewMode, NotebookContentChange, INotebookModel } from 'sql/workbench/services/notebook/browser/models/modelInterfaces';
 import { IConnectionProfile } from 'sql/platform/connection/common/interfaces';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -51,13 +48,10 @@ export class NotebookEditorComponent extends AngularDisposable {
 	constructor(
 		@Inject(IBootstrapParams) private _notebookParams: INotebookParams,
 		@Inject(INotebookService) private notebookService: INotebookService,
-		@Inject(ICapabilitiesService) private capabilitiesService: ICapabilitiesService,
 		@Inject(IContextKeyService) private contextKeyService: IContextKeyService,
 		@Inject(IMenuService) private menuService: IMenuService,
-		@Inject(INotificationService) private notificationService: INotificationService,
 		@Inject(IInstantiationService) private instantiationService: IInstantiationService,
 		@Inject(forwardRef(() => ChangeDetectorRef)) private _changeRef: ChangeDetectorRef,
-		@Inject(IConnectionManagementService) private connectionManagementService: IConnectionManagementService,
 	) {
 		super();
 		this.updateProfile();
@@ -123,8 +117,6 @@ export class NotebookEditorComponent extends AngularDisposable {
 		let model = this.instantiationService.createInstance(NotebookModel, {
 			factory: this.modelFactory,
 			notebookUri: this._notebookParams.notebookUri,
-			connectionService: this.connectionManagementService,
-			notificationService: this.notificationService,
 			serializationManagers: this.serializationManagers,
 			executeManagers: this.executeManagers,
 			contentLoader: this._notebookParams.input.contentLoader,
@@ -132,7 +124,6 @@ export class NotebookEditorComponent extends AngularDisposable {
 			providerId: providerInfo.providerId,
 			defaultKernel: this._notebookParams.input.defaultKernel,
 			layoutChanged: this._notebookParams.input.layoutChanged,
-			capabilitiesService: this.capabilitiesService,
 			editorLoadedTimestamp: this._notebookParams.input.editorOpenedTimestamp,
 			getInputLanguageMode: () => this._notebookParams.input.languageMode // Can't pass in languageMode directly since it can change after the editor loads
 		}, this.profile);

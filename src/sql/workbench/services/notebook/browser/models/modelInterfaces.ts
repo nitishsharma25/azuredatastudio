@@ -17,7 +17,6 @@ import { IConnectionProfile } from 'sql/platform/connection/common/interfaces';
 import { IConnectionManagementService } from 'sql/platform/connection/common/connectionManagement';
 import { IStandardKernelWithProvider } from 'sql/workbench/services/notebook/browser/models/notebookUtils';
 import { ConnectionProfile } from 'sql/platform/connection/common/connectionProfile';
-import { ICapabilitiesService } from 'sql/platform/capabilities/common/capabilitiesService';
 import { NotebookModel } from 'sql/workbench/services/notebook/browser/models/notebookModel';
 import type { FutureInternal } from 'sql/workbench/services/notebook/browser/interfaces';
 import { ICellValue, ResultSetSummary } from 'sql/workbench/services/query/common/query';
@@ -42,7 +41,6 @@ export interface ICellRange {
 export interface IClientSessionOptions {
 	notebookUri: URI;
 	executeManager: IExecuteManager;
-	notificationService: INotificationService;
 	kernelSpec: nb.IKernelSpec;
 }
 
@@ -540,9 +538,6 @@ export interface INotebookModelOptions {
 
 	layoutChanged: Event<void>;
 
-	notificationService: INotificationService;
-	connectionService: IConnectionManagementService;
-	capabilitiesService: ICapabilitiesService;
 	getInputLanguageMode: () => string;
 	editorLoadedTimestamp?: number;
 }

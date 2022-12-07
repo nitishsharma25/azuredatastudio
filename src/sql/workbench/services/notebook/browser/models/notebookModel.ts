@@ -584,7 +584,7 @@ export class NotebookModel extends Disposable implements INotebookModel {
 		}
 		if (this.requestConnectionHandler) {
 			return this.requestConnectionHandler();
-		} else if (this.notificationService) {
+		} else {
 			this.notificationService.notify({ severity: Severity.Error, message: localize('kernelRequiresConnection', "Please select a connection to run cells for this kernel") });
 		}
 		return false;
@@ -1006,7 +1006,6 @@ export class NotebookModel extends Disposable implements INotebookModel {
 			let clientSession = this._notebookOptions.factory.createClientSession({
 				notebookUri: this._notebookOptions.notebookUri,
 				executeManager: manager,
-				notificationService: this._notebookOptions.notificationService,
 				kernelSpec: this._defaultKernel
 			});
 			if (!this._activeClientSession) {
@@ -1014,7 +1013,7 @@ export class NotebookModel extends Disposable implements INotebookModel {
 			}
 
 			// If a connection profile is passed in and _activeConnection isn't yet set, use that. Otherwise, use _activeConnection
-			let profile = this._activeConnection ? this._activeConnection : new ConnectionProfile(this._notebookOptions.capabilitiesService, this.connectionProfile);
+			let profile = this._activeConnection ? this._activeConnection : new ConnectionProfile(this._capabilitiesService, this.connectionProfile);
 
 			if (this.isValidConnection(profile)) {
 				this._activeConnection = profile;
@@ -1445,7 +1444,7 @@ export class NotebookModel extends Disposable implements INotebookModel {
 
 	public async handleClosed(): Promise<void> {
 		try {
-			if (this.notebookOptions && this.notebookOptions.connectionService && this._activeConnection) {
+			if (this.notebookOptions && this.connectionManagementService && this._activeConnection) {
 				await this.disconnectNotebookConnection(this._activeConnection);
 				this._activeConnection = undefined;
 			}
@@ -1562,16 +1561,16 @@ export class NotebookModel extends Disposable implements INotebookModel {
 	// so that connections can be tracked accordingly throughout ADS:
 	// let connectionUri = Utils.generateUri(connection, 'notebook');
 	private async disconnectNotebookConnection(conn: ConnectionProfile): Promise<void> {
-		if (this.notebookOptions.connectionService.getConnectionUri(conn).indexOf(uriPrefixes.notebook) > -1) {
-			let uri = this._notebookOptions.connectionService.getConnectionUri(conn);
-			await this.notebookOptions.connectionService.disconnect(uri).catch(e => this.logService.error(e));
+		if (this.connectionManagementService.getConnectionUri(conn).indexOf(uriPrefixes.notebook) > -1) {
+			let uri = this.connectionManagementService.getConnectionUri(conn);
+			await this.connectionManagementService.disconnect(uri).catch(e => this.logService.error(e));
 		}
 	}
 
 	// Disconnect any connections that were added through the "Change connection" functionality in the Attach To dropdown
 	private async disconnectAttachToConnections(): Promise<void> {
 		notebookUtils.asyncForEach(this._connectionUrisToDispose, async (conn: string) => {
-			await this.notebookOptions.connectionService.disconnect(conn).catch(e => this.logService.error(e));
+			await this.connectionManagementService.disconnect(conn).catch(e => this.logService.error(e));
 		});
 		this._connectionUrisToDispose = [];
 	}

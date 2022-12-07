@@ -21,7 +21,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { Event, Emitter } from 'vs/base/common/event';
 import { CellTypes } from 'sql/workbench/services/notebook/common/contracts';
 import { INotebookService, OVERRIDE_EDITOR_THEMING_SETTING } from 'sql/workbench/services/notebook/browser/notebookService';
-import { IConnectionManagementService } from 'sql/platform/connection/common/connectionManagement';
 import { ILogService } from 'vs/platform/log/common/log';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { CellView } from 'sql/workbench/contrib/notebook/browser/cellViews/interfaces';
@@ -41,6 +40,7 @@ import { URI } from 'vs/base/common/uri';
 import { ILanguagePickInput } from 'vs/workbench/contrib/notebook/browser/controller/editActions';
 import { ILanguageService } from 'vs/editor/common/languages/language';
 import { IModelService } from 'vs/editor/common/services/model';
+import { IConnectionManagementService } from 'sql/platform/connection/common/connectionManagement';
 
 export const CODE_SELECTOR: string = 'code-component';
 const MARKDOWN_CLASS = 'markdown';
@@ -109,6 +109,7 @@ export class CodeComponent extends CellView implements OnInit, OnChanges {
 		@Inject(ILogService) private readonly logService: ILogService,
 		@Inject(IQuickInputService) private _quickInputService: IQuickInputService,
 		@Inject(INotebookService) private _notebookService: INotebookService,
+		@Inject(IConnectionManagementService) private connectionService: IConnectionManagementService,
 	) {
 		super();
 		this._register(Event.debounce(this._layoutEmitter.event, (l, e) => e, 250, /*leading=*/false)
@@ -166,25 +167,20 @@ export class CodeComponent extends CellView implements OnInit, OnChanges {
 	private updateConnectionState(shouldConnect: boolean) {
 		if (this.isSqlCodeCell()) {
 			let cellUri = this.cellModel.cellUri.toString();
-			let connectionService = this.connectionService;
-			if (!shouldConnect && connectionService && connectionService.isConnected(cellUri)) {
-				connectionService.disconnect(cellUri).catch(e => this.logService.error(e));
-			} else if (shouldConnect && this._model.context && this._model.context.id !== DEFAULT_OR_LOCAL_CONTEXT_ID) {
+			if (!shouldConnect && this.connectionService?.isConnected(cellUri)) {
+				this.connectionService.disconnect(cellUri).catch(e => this.logService.error(e));
+			} else if (shouldConnect && this._model.context?.id !== DEFAULT_OR_LOCAL_CONTEXT_ID) {
 				// Don't connect immediately in case the user is switching cells quickly (such as holding down the arrow key to navigate through cells)
 				// Instead wait a small bit and then check if the cell is still active, and if it is at that point then connect so we aren't thrashing
 				// connections
 				setTimeout(() => {
 					if (this.isActive()) {
-						connectionService.connect(this._model.context, cellUri).catch(e => this.logService.error(e));
+						this.connectionService.connect(this._model.context, cellUri).catch(e => this.logService.error(e));
 					}
 				}, 250);
 
 			}
 		}
-	}
-
-	private get connectionService(): IConnectionManagementService {
-		return this._model && this._model.notebookOptions && this._model.notebookOptions.connectionService;
 	}
 
 	private isSqlCodeCell() {
