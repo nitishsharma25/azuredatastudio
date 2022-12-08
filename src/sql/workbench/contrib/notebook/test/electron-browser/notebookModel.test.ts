@@ -148,7 +148,7 @@ let undoRedoService: IUndoRedoService;
 let capabilitiesService: ICapabilitiesService;
 let instantiationService: TestInstantiationService;
 let configurationService: IConfigurationService;
-let notebookService: INotebookService;
+let defaultNotebookService: INotebookService;
 
 suite('notebook model', function (): void {
 	let serializationManagers = [new SerializationManagerStub()];
@@ -169,7 +169,7 @@ suite('notebook model', function (): void {
 		capabilitiesService = new TestCapabilitiesService();
 		let mockNotebookService = TypeMoq.Mock.ofType(NotebookServiceStub);
 		mockNotebookService.setup(s => s.onNotebookKernelsAdded).returns(() => new Emitter<IStandardKernelWithProvider[]>().event);
-		notebookService = mockNotebookService.object;
+		defaultNotebookService = mockNotebookService.object;
 		memento = TypeMoq.Mock.ofType(Memento, TypeMoq.MockBehavior.Loose, '');
 		memento.setup(x => x.getMemento(TypeMoq.It.isAny(), TypeMoq.It.isAny())).returns(() => void 0);
 		queryConnectionService = TypeMoq.Mock.ofType(TestConnectionManagementService, TypeMoq.MockBehavior.Loose, memento.object, undefined, new TestStorageService());
@@ -1060,7 +1060,7 @@ suite('notebook model', function (): void {
 		let mockExecuteManager = TypeMoq.Mock.ofType<IExecuteManager>(ExecuteManagerStub);
 		mockNotebookService.setup(s => s.getOrCreateExecuteManager(TypeMoq.It.isAnyString(), TypeMoq.It.isAny())).returns(() => Promise.resolve(mockExecuteManager.object));
 
-		let model = createNotebookModel(defaultModelOptions);
+		let model = createNotebookModel(defaultModelOptions, mockNotebookService.object);
 		model.standardKernels = [{
 			name: 'SQL',
 			displayName: 'SQL',
@@ -1156,8 +1156,8 @@ suite('notebook model', function (): void {
 	}
 
 	// This helper method is so that we don't have to update every instance of the NotebookModel constructor whenever there's an argument change.
-	function createNotebookModel(options: INotebookModelOptions): NotebookModel {
-		return new NotebookModel(options, undefined, logService, undefined, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undoRedoService, notebookService, capabilitiesService, undefined);
+	function createNotebookModel(options: INotebookModelOptions, notebookService?: INotebookService): NotebookModel {
+		return new NotebookModel(options, undefined, logService, notificationService.object, new NullAdsTelemetryService(), queryConnectionService.object, configurationService, undoRedoService, notebookService ?? defaultNotebookService, capabilitiesService, undefined);
 	}
 
 	async function changeContextWithConnectionProfile(model: NotebookModel) {
