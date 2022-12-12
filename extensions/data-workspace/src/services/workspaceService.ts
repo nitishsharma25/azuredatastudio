@@ -265,7 +265,7 @@ export class WorkspaceService implements IWorkspaceService {
 			if (projectTypes && projectTypes.length > 0) {
 				if (projType) {
 					if (projectTypes.findIndex((proj: string) => proj.toUpperCase() === projType) !== -1) {
-						await this.handleProjectProviderExtension(extension);
+						await this.handleProjectProviderExtension(extension, projType);
 						break;
 					}
 				} else {
@@ -275,10 +275,17 @@ export class WorkspaceService implements IWorkspaceService {
 		}
 	}
 
-	private async handleProjectProviderExtension(extension: vscode.Extension<any>): Promise<void> {
+	private async handleProjectProviderExtension(extension: vscode.Extension<any>, projType?: string): Promise<void> {
 		try {
 			if (!extension.isActive) {
-				await extension.activate();
+				if (projType) {
+					const projFilesInWorkspace = await vscode.workspace.findFiles(`**/*.${projType}`);
+					if (projFilesInWorkspace?.length > 0) {
+						await extension.activate();
+					}
+				} else {
+					await extension.activate();
+				}
 			}
 		} catch (err) {
 			Logger.error(constants.ExtensionActivationError(extension.id, err));

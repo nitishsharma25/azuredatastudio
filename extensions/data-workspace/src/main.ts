@@ -18,6 +18,7 @@ import { createNewProjectWithQuickpick } from './dialogs/newProjectQuickpick';
 import Logger from './common/logger';
 
 export async function activate(context: vscode.ExtensionContext): Promise<IExtension> {
+	console.error('activating data workspace extension');
 	const startTime = new Date().getTime();
 	Logger.log(`Starting Data Workspace activate()`);
 

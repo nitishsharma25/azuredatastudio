@@ -46,6 +46,7 @@ export default class MainController implements vscode.Disposable {
 	}
 
 	public async activate(): Promise<SqlDatabaseProjectProvider> {
+		console.error('activating sql projects');
 		// upgrade path from former netCoreSDKLocation setting to dotnetSDK Location setting
 		// copy old setting's value to new setting
 		const oldNetCoreInstallSetting = vscode.workspace.getConfiguration(DBProjectConfigurationKey)[NetCoreInstallLocationKey];
