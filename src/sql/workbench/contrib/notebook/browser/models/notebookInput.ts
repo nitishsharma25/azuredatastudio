@@ -225,9 +225,6 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	private _connectionProfile: IConnectionProfile;
 	private _notebookContents: azdata.nb.INotebookContents;
 	private _defaultKernel: azdata.nb.IKernelSpec;
-	public hasBootstrapped = false;
-	// Holds the HTML content for the editor when the editor discards this input and loads another
-	private _parentContainer: HTMLElement;
 	private readonly _layoutChanged: Emitter<void> = this._register(new Emitter<void>());
 	private _model: NotebookEditorModel;
 	private _untitledEditorModel: IUntitledTextEditorModel;
@@ -237,7 +234,6 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	private _notebookEditorOpenedTimestamp: number;
 	private _modelResolveInProgress: boolean = false;
 	private _modelResolved: Deferred<void> = new Deferred<void>();
-	private _containerResolved: Deferred<void> = new Deferred<void>();
 
 	private _notebookFindModel: NotebookFindModel;
 
@@ -507,34 +503,7 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 		if (this._model && this._model.editorModel && this._model.editorModel.textEditorModel) {
 			this._model.editorModel.textEditorModel.onBeforeDetached();
 		}
-		this._disposeContainer();
 		super.dispose();
-	}
-
-	private _disposeContainer() {
-		if (!this._parentContainer) {
-			return;
-		}
-
-		let parentNode = this._parentContainer.parentNode;
-		if (parentNode) {
-			parentNode.removeChild(this._parentContainer);
-			this._parentContainer = null;
-		}
-	}
-
-	set container(container: HTMLElement) {
-		this._disposeContainer();
-		this._parentContainer = container;
-		this._containerResolved.resolve();
-	}
-
-	get container(): HTMLElement {
-		return this._parentContainer;
-	}
-
-	get containerResolved(): Promise<void> {
-		return this._containerResolved.promise;
 	}
 
 	/**

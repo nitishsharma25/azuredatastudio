@@ -201,17 +201,12 @@ export class NotebookEditor extends EditorPane implements IFindNotebookControlle
 		await super.setInput(input, options, context, CancellationToken.None);
 		DOM.clearNode(parentElement);
 		await this.setFindInput(parentElement);
-		if (!input.hasBootstrapped) {
-			let container = DOM.$<HTMLElement>('.notebookEditor');
-			container.style.height = '100%';
-			this._notebookContainer = DOM.append(parentElement, container);
-			input.container = this._notebookContainer;
-			return Promise.resolve(this.bootstrapAngular(input));
-		} else {
-			this._notebookContainer = DOM.append(parentElement, input.container);
-			input.doChangeLayout();
-			return Promise.resolve(null);
-		}
+
+		let container = DOM.$<HTMLElement>('.notebookEditor');
+		container.style.height = '100%';
+		this._notebookContainer = DOM.append(parentElement, container);
+		this.bootstrapAngular(input);
+		input.doChangeLayout();
 	}
 
 
@@ -230,7 +225,6 @@ export class NotebookEditor extends EditorPane implements IFindNotebookControlle
 	 */
 	private bootstrapAngular(input: NotebookInput): void {
 		// Get the bootstrap params and perform the bootstrap
-		input.hasBootstrapped = true;
 		let params: INotebookParams = {
 			notebookUri: input.notebookUri,
 			input: input,
