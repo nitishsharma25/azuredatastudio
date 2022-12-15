@@ -128,7 +128,7 @@ export class NotebookEditorComponent extends AngularDisposable {
 	}
 
 	private async createModelAndLoadContents(): Promise<void> {
-		if (this._notebookParams.input?.notebookModel) {
+		if (this._notebookParams.input.notebookModel) {
 			this.model = this._notebookParams.input.notebookModel as NotebookModel;
 		} else {
 			let providerInfo = await this._input.getProviderInfo();
@@ -157,6 +157,8 @@ export class NotebookEditorComponent extends AngularDisposable {
 			this._register(this.model.contentChanged((change) => this.handleContentChanged(change)));
 			this._register(this.model.onCellTypeChanged(() => this.detectChanges()));
 			this._register(this.model.layoutChanged(() => this.detectChanges()));
+
+			this._notebookParams.input.notebookModel = this.model;
 		}
 
 		this.views = new NotebookViewsExtension(this.model);

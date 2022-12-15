@@ -226,7 +226,8 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	private _notebookContents: azdata.nb.INotebookContents;
 	private _defaultKernel: azdata.nb.IKernelSpec;
 	private readonly _layoutChanged: Emitter<void> = this._register(new Emitter<void>());
-	private _model: NotebookEditorModel;
+	private _editorModel: NotebookEditorModel;
+	private _model: NotebookModel;
 	private _untitledEditorModel: IUntitledTextEditorModel;
 	private _contentLoader: IContentLoader;
 	private _providersLoaded: Promise<void>;
@@ -277,13 +278,18 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 		this._resource = value;
 	}
 
-	public get notebookModel(): INotebookModel | undefined {
-		return this._model.getNotebookModel();
+	public get notebookModel(): NotebookModel | undefined {
+		return this._model;
+	}
+
+	public set notebookModel(value: NotebookModel) {
+		this._model = value;
+		this._register(value);
 	}
 
 	public get notebookFindModel(): NotebookFindModel {
 		if (!this._notebookFindModel) {
-			this._notebookFindModel = new NotebookFindModel(this._model.getNotebookModel());
+			this._notebookFindModel = new NotebookFindModel(this._editorModel.getNotebookModel());
 		}
 		return this._notebookFindModel;
 	}
@@ -377,7 +383,7 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	}
 
 	private async setTrustForNewEditor(newInput: EditorInput | undefined): Promise<void> {
-		let model = this._model.getNotebookModel();
+		let model = this._editorModel.getNotebookModel();
 		if (model?.trustedMode && newInput && newInput.resource !== this.resource) {
 			await this.notebookService.serializeNotebookStateChange(newInput.resource, NotebookChangeType.Saved, undefined, true);
 		}
@@ -432,10 +438,10 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 			this._modelResolveInProgress = true;
 		} else {
 			await this._modelResolved;
-			return this._model;
+			return this._editorModel;
 		}
-		if (this._model) {
-			return Promise.resolve(this._model);
+		if (this._editorModel) {
+			return Promise.resolve(this._editorModel);
 		} else {
 			let textOrUntitledEditorModel: ITextFileEditorModel | IUntitledTextEditorModel | TextResourceEditorModel;
 			if (this.resource.scheme === Schemas.untitled) {
@@ -456,10 +462,10 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 				await textEditorModelReference.object.resolve();
 				textOrUntitledEditorModel = textEditorModelReference.object as TextFileEditorModel | TextResourceEditorModel;
 			}
-			this._model = this._register(this.instantiationService.createInstance(NotebookEditorModel, this.resource, textOrUntitledEditorModel));
-			this.hookDirtyListener(this._model.onDidChangeDirty, () => this._onDidChangeDirty.fire());
+			this._editorModel = this._register(this.instantiationService.createInstance(NotebookEditorModel, this.resource, textOrUntitledEditorModel));
+			this.hookDirtyListener(this._editorModel.onDidChangeDirty, () => this._onDidChangeDirty.fire());
 			this._modelResolved.resolve();
-			return this._model;
+			return this._editorModel;
 		}
 	}
 
@@ -504,8 +510,8 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	}
 
 	public override dispose(): void {
-		if (this._model && this._model.editorModel && this._model.editorModel.textEditorModel) {
-			this._model.editorModel.textEditorModel.onBeforeDetached();
+		if (this._editorModel && this._editorModel.editorModel && this._editorModel.editorModel.textEditorModel) {
+			this._editorModel.editorModel.textEditorModel.onBeforeDetached();
 		}
 		super.dispose();
 	}
@@ -514,8 +520,8 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	 * An editor that is dirty will be asked to be saved once it closes.
 	 */
 	override isDirty(): boolean {
-		if (this._model) {
-			return this._model.isDirty();
+		if (this._editorModel) {
+			return this._editorModel.isDirty();
 		} else if (this._textInput) {
 			return this._textInput.isDirty();
 		}
@@ -527,13 +533,13 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	 * @param isDirty boolean value to set editor dirty
 	 */
 	setDirty(isDirty: boolean): void {
-		if (this._model) {
-			this._model.setDirty(isDirty);
+		if (this._editorModel) {
+			this._editorModel.setDirty(isDirty);
 		}
 	}
 
 	public updateModel(): Promise<void> {
-		return this._model.updateModel();
+		return this._editorModel.updateModel();
 	}
 
 	public override matches(otherInput: EditorInput | IUntypedEditorInput): boolean {
