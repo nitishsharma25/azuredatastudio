@@ -65,9 +65,12 @@ export class NotebookEditorComponent extends AngularDisposable {
 		super();
 		this.updateProfile();
 		this._modelFactory = new ModelFactory(this.instantiationService);
+		this._notebookParams.inputUpdated(input => {
+			this._notebookParams.input = input;
+			this.doLoad().catch(e => onUnexpectedError(e));
+		})
 	}
 	ngOnInit() {
-		this.doLoad().catch(e => onUnexpectedError(e));
 	}
 
 	private updateProfile(): void {
@@ -117,41 +120,47 @@ export class NotebookEditorComponent extends AngularDisposable {
 		await this.model.requestModelLoad();
 		this.detectChanges();
 		this.setContextKeyServiceWithProviderId(this.model.providerId);
-		await this.model.startSession(this.model.executeManager, undefined, true);
+		if (!this.model.clientSession) {
+			await this.model.startSession(this.model.executeManager, undefined, true);
+		}
 		this.fillInActionsForCurrentContext();
 		this.detectChanges();
 	}
 
 	private async createModelAndLoadContents(): Promise<void> {
-		let providerInfo = await this._input.getProviderInfo();
-		let model = this.instantiationService.createInstance(NotebookModel, {
-			factory: this._modelFactory,
-			notebookUri: this._input.notebookUri,
-			connectionService: this.connectionManagementService,
-			notificationService: this.notificationService,
-			serializationManagers: this.serializationManagers,
-			executeManagers: this.executeManagers,
-			contentLoader: this._input.contentLoader,
-			cellMagicMapper: new CellMagicMapper(this.notebookService.languageMagics),
-			providerId: providerInfo.providerId,
-			defaultKernel: this._input.defaultKernel,
-			layoutChanged: this._input.layoutChanged,
-			capabilitiesService: this.capabilitiesService,
-			editorLoadedTimestamp: this._input.editorOpenedTimestamp,
-			getInputLanguageMode: () => this._input.languageMode // Can't pass in languageMode directly since it can change after the editor loads
-		}, this.profile);
+		if (this._notebookParams.input?.notebookModel) {
+			this.model = this._notebookParams.input.notebookModel as NotebookModel;
+		} else {
+			let providerInfo = await this._input.getProviderInfo();
+			let model = this.instantiationService.createInstance(NotebookModel, {
+				factory: this._modelFactory,
+				notebookUri: this._input.notebookUri,
+				connectionService: this.connectionManagementService,
+				notificationService: this.notificationService,
+				serializationManagers: this.serializationManagers,
+				executeManagers: this.executeManagers,
+				contentLoader: this._input.contentLoader,
+				cellMagicMapper: new CellMagicMapper(this.notebookService.languageMagics),
+				providerId: providerInfo.providerId,
+				defaultKernel: this._input.defaultKernel,
+				layoutChanged: this._input.layoutChanged,
+				capabilitiesService: this.capabilitiesService,
+				editorLoadedTimestamp: this._input.editorOpenedTimestamp,
+				getInputLanguageMode: () => this._input.languageMode // Can't pass in languageMode directly since it can change after the editor loads
+			}, this.profile);
+			this.model = this._register(model);
 
-		let trusted = await this.notebookService.isNotebookTrustCached(this._input.notebookUri, this.isDirty());
-		this.model = this._register(model);
-		await this.model.loadContents(trusted);
+			let trusted = await this.notebookService.isNotebookTrustCached(this._input.notebookUri, this.isDirty());
+			await this.model.loadContents(trusted);
+
+			this._register(this.model.viewModeChanged((mode) => this.onViewModeChanged()));
+			this._register(this.model.contentChanged((change) => this.handleContentChanged(change)));
+			this._register(this.model.onCellTypeChanged(() => this.detectChanges()));
+			this._register(this.model.layoutChanged(() => this.detectChanges()));
+		}
 
 		this.views = new NotebookViewsExtension(this.model);
 		this.viewMode = this.viewMode ?? this.defaultViewMode;
-
-		this._register(model.viewModeChanged((mode) => this.onViewModeChanged()));
-		this._register(model.contentChanged((change) => this.handleContentChanged(change)));
-		this._register(model.onCellTypeChanged(() => this.detectChanges()));
-		this._register(model.layoutChanged(() => this.detectChanges()));
 
 		this.views.onViewDeleted(() => this.handleViewDeleted());
 		this.views.onActiveViewChanged(() => this.handleActiveViewChanged());
