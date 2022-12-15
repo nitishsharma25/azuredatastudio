@@ -84,7 +84,7 @@ export class NotebookViewComponent extends AngularDisposable implements INoteboo
 	}
 
 	public get id(): string {
-		return this.notebookParams.notebookUri.toString();
+		return this._notebookParams.input.notebookUri.toString();
 	}
 
 	isDirty(): boolean {
@@ -192,10 +192,10 @@ export class NotebookViewComponent extends AngularDisposable implements INoteboo
 		await this._notebookService.registrationComplete;
 		this.model.standardKernels = this._notebookParams.input.standardKernels;
 		// Refresh the provider if we had been using default
-		let providerInfo = await this._notebookParams.providerInfo;
+		let providerInfo = await this._notebookParams.input.getProviderInfo();
 
 		if (DEFAULT_NOTEBOOK_PROVIDER === providerInfo.providerId) {
-			let providers = notebookUtils.getProvidersForFileName(this._notebookParams.notebookUri.fsPath, this._notebookService);
+			let providers = notebookUtils.getProvidersForFileName(this._notebookParams.input.notebookUri.fsPath, this._notebookService);
 			let tsqlProvider = providers.find(provider => provider === SQL_NOTEBOOK_PROVIDER);
 			providerInfo.providerId = tsqlProvider ? SQL_NOTEBOOK_PROVIDER : providers[0];
 		}
@@ -241,7 +241,7 @@ export class NotebookViewComponent extends AngularDisposable implements INoteboo
 
 		if (!this._actionBar) {
 			this._actionBar = new Taskbar(taskbar, { actionViewItemProvider: action => this.actionItemProvider(action as Action) });
-			this._actionBar.context = this._notebookParams.notebookUri;//this.model;
+			this._actionBar.context = this._notebookParams.input.notebookUri;//this.model;
 			taskbar.classList.add('in-preview');
 		}
 
@@ -282,7 +282,7 @@ export class NotebookViewComponent extends AngularDisposable implements INoteboo
 			() => AnchorAlignment.RIGHT
 		);
 		viewsDropdownMenuActionViewItem.render(viewsDropdownContainer);
-		viewsDropdownMenuActionViewItem.setActionContext(this._notebookParams.notebookUri);
+		viewsDropdownMenuActionViewItem.setActionContext(this._notebookParams.input.notebookUri);
 
 		let deleteView = this._instantiationService.createInstance(DeleteViewAction, this.views);
 

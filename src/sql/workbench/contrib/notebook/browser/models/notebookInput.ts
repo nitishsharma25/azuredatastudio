@@ -270,7 +270,11 @@ export abstract class NotebookInput extends EditorInput implements INotebookInpu
 	}
 
 	public get notebookUri(): URI {
-		return this.resource;
+		return this._resource;
+	}
+
+	public set notebookUri(value: URI) {
+		this._resource = value;
 	}
 
 	public get notebookModel(): INotebookModel | undefined {

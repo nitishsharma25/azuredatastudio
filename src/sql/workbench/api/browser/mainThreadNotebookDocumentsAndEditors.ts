@@ -51,13 +51,13 @@ class MainThreadNotebookEditor extends Disposable {
 				this._providerId = provider;
 			}));
 		});
-		editor.notebookParams.providerInfo.then(info => {
+		editor.notebookParams.input.getProviderInfo().then(info => {
 			this._providers = info.providers;
 		});
 	}
 
 	public get uri(): URI {
-		return this.editor.notebookParams.notebookUri;
+		return this.editor.notebookParams.input.notebookUri;
 	}
 
 	public get id(): string {

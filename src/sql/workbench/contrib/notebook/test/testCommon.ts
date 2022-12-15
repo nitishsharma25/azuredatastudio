@@ -26,7 +26,7 @@ export class NotebookEditorStub extends stubs.NotebookEditorStub {
 		this.views = views;
 		this.notebookParams = notebookParams;
 		this.cellEditors = [new CellEditorProviderStub({ cellGuid: cellGuid, instantiationService: instantiationService, editor: editor })];
-		this.id = this.notebookParams?.notebookUri?.toString();
+		this.id = this.notebookParams?.input?.notebookUri?.toString();
 		this.modelReady = Promise.resolve(this.model);
 	}
 }

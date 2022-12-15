@@ -405,18 +405,18 @@ export class NotebookComponent extends AngularDisposable implements OnInit, OnDe
 		} catch (error) {
 			if (error) {
 				// Offer to create a file from the error if we have a file not found and the name is valid
-				if ((<FileOperationError>error).fileOperationResult === FileOperationResult.FILE_NOT_FOUND && isValidBasename(basename(this.notebookParams.notebookUri))) {
+				if ((<FileOperationError>error).fileOperationResult === FileOperationResult.FILE_NOT_FOUND && isValidBasename(basename(this.notebookParams.input.notebookUri))) {
 					let errorWithAction = createErrorWithActions(toErrorMessage(error),
 						[
 							new Action('workbench.files.action.createMissingFile', localize('createFile', "Create File"), undefined, true, () => {
 								let operations = new Array(1);
 								operations[0] = {
-									resource: this.notebookParams.notebookUri,
+									resource: this.notebookParams.input.notebookUri,
 									value: undefined,
 									options: undefined
 								};
 								return this.textFileService.create(operations).then(() => this.editorService.openEditor({
-									resource: this.notebookParams.notebookUri,
+									resource: this.notebookParams.input.notebookUri,
 									options: {
 										pinned: true // new file gets pinned by default
 									}
@@ -528,11 +528,11 @@ export class NotebookComponent extends AngularDisposable implements OnInit, OnDe
 		this._trustedAction = this.instantiationService.createInstance(TrustedAction, 'notebook.Trusted', true);
 		this._trustedAction.enabled = false;
 
-		let runParametersAction = this.instantiationService.createInstance(RunParametersAction, 'notebook.runParameters', true, this._notebookParams.notebookUri);
+		let runParametersAction = this.instantiationService.createInstance(RunParametersAction, 'notebook.runParameters', true, this._notebookParams.input.notebookUri);
 
 		let taskbar = <HTMLElement>this.toolbar.nativeElement;
 		this._actionBar = new Taskbar(taskbar, { actionViewItemProvider: action => this.actionItemProvider(action as Action) });
-		this._actionBar.context = this._notebookParams.notebookUri;
+		this._actionBar.context = this._notebookParams.input.notebookUri;
 		taskbar.classList.add('in-preview');
 
 		let buttonDropdownContainer = DOM.$('li.action-item');
@@ -549,7 +549,7 @@ export class NotebookComponent extends AngularDisposable implements OnInit, OnDe
 			undefined
 		);
 		dropdownMenuActionViewItem.render(buttonDropdownContainer);
-		dropdownMenuActionViewItem.setActionContext(this._notebookParams.notebookUri);
+		dropdownMenuActionViewItem.setActionContext(this._notebookParams.input.notebookUri);
 
 		let viewsDropdownContainer;
 		if (this._configurationService.getValue<boolean>('notebookViews.enabled')) {
@@ -570,7 +570,7 @@ export class NotebookComponent extends AngularDisposable implements OnInit, OnDe
 				undefined
 			);
 			viewsDropdownMenuActionViewItem.render(viewsDropdownContainer);
-			viewsDropdownMenuActionViewItem.setActionContext(this._notebookParams.notebookUri);
+			viewsDropdownMenuActionViewItem.setActionContext(this._notebookParams.input.notebookUri);
 		}
 
 		if (this._showToolbarActions) {
@@ -600,10 +600,10 @@ export class NotebookComponent extends AngularDisposable implements OnInit, OnDe
 	}
 
 	protected initNavSection(): void {
-		this._navProvider = this.notebookService.getNavigationProvider(this._notebookParams.notebookUri);
+		this._navProvider = this.notebookService.getNavigationProvider(this._notebookParams.input.notebookUri);
 
 		if (this.contextKeyService.getContextKeyValue('bookOpened') && this._navProvider) {
-			this._navProvider.getNavigation(this._notebookParams.notebookUri).then(result => {
+			this._navProvider.getNavigation(this._notebookParams.input.notebookUri).then(result => {
 				this.navigationResult = result;
 				this.addButton(localize('previousButtonLabel', "< Previous"),
 					() => this.previousPage(), this.navigationResult.previous ? true : false);
@@ -688,7 +688,7 @@ export class NotebookComponent extends AngularDisposable implements OnInit, OnDe
 	}
 
 	public get id(): string {
-		return this._notebookParams.notebookUri.toString();
+		return this._notebookParams.input.notebookUri.toString();
 	}
 
 	public get modelReady(): Promise<INotebookModel> {
@@ -823,8 +823,8 @@ export class NotebookComponent extends AngularDisposable implements OnInit, OnDe
 	}
 
 	private navigateToSectionIfURIFragmentExists(): void {
-		if (this.notebookParams.notebookUri?.fragment) {
-			this.navigateToSection(this.notebookParams.notebookUri.fragment);
+		if (this.notebookParams.input.notebookUri?.fragment) {
+			this.navigateToSection(this.notebookParams.input.notebookUri.fragment);
 		}
 	}
 

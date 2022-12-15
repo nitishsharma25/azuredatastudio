@@ -56,6 +56,7 @@ export class NotebookEditor extends EditorPane implements IFindNotebookControlle
 	private _previousMatch: NotebookRange;
 	private readonly _toDispose = new DisposableStore();
 	private readonly _startSearchingTimer: TimeoutTimer;
+	private _inputUpdated = new Emitter<NotebookInput>();
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
@@ -170,6 +171,24 @@ export class NotebookEditor extends EditorPane implements IFindNotebookControlle
 			this._themeService
 		);
 		this._finder.getDomNode().style.visibility = 'hidden';
+
+		let container = DOM.$<HTMLElement>('.notebookEditor');
+		container.style.height = '100%';
+		const parentElement = this.getContainer();
+		DOM.clearNode(parentElement);
+		this.setFindInput(parentElement);
+		this._notebookContainer = DOM.append(parentElement, container);
+
+		// Get the bootstrap params and perform the bootstrap
+		let params: INotebookParams = {
+			inputUpdated: this._inputUpdated.event
+		};
+		this._instantiationService.invokeFunction(bootstrapAngular,
+			NotebookModule,
+			this._notebookContainer,
+			NOTEBOOKEDITOR_SELECTOR,
+			params
+		);
 	}
 
 	/**
@@ -196,48 +215,23 @@ export class NotebookEditor extends EditorPane implements IFindNotebookControlle
 			return Promise.resolve(undefined);
 		}
 
-		const parentElement = this.getContainer();
-
 		await super.setInput(input, options, context, CancellationToken.None);
-		DOM.clearNode(parentElement);
-		await this.setFindInput(parentElement);
-
-		let container = DOM.$<HTMLElement>('.notebookEditor');
-		container.style.height = '100%';
-		this._notebookContainer = DOM.append(parentElement, container);
-		this.bootstrapAngular(input);
-		input.doChangeLayout();
+		this._inputUpdated.fire(input);
+		// input.doChangeLayout();
 	}
 
 
-	private async setFindInput(parentElement: HTMLElement): Promise<void> {
+	private setFindInput(parentElement: HTMLElement): void {
 		parentElement.appendChild(this._overlay);
-		await this.setNotebookModel();
-		if (this._findState.isRevealed) {
-			this._triggerInputChange();
-		} else {
-			this._findDecorations.clearDecorations();
-		}
-	}
-
-	/**
-	 * Load the angular components and record for this input that we have done so
-	 */
-	private bootstrapAngular(input: NotebookInput): void {
-		// Get the bootstrap params and perform the bootstrap
-		let params: INotebookParams = {
-			notebookUri: input.notebookUri,
-			input: input,
-			providerInfo: input.getProviderInfo(),
-			profile: input.connectionProfile
-		};
-		this._instantiationService.invokeFunction(bootstrapAngular,
-			NotebookModule,
-			this._notebookContainer,
-			NOTEBOOKEDITOR_SELECTOR,
-			params,
-			input
-		);
+		this.setNotebookModel()
+			.then(() => {
+				if (this._findState.isRevealed) {
+					this._triggerInputChange();
+				} else {
+					this._findDecorations.clearDecorations();
+				}
+			})
+			.catch(e => onUnexpectedError(e));
 	}
 
 	public getConfiguration() {

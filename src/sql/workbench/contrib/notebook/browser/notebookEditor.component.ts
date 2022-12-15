@@ -12,7 +12,7 @@ import { IConnectionManagementService } from 'sql/platform/connection/common/con
 import { CellMagicMapper } from 'sql/workbench/contrib/notebook/browser/models/cellMagicMapper';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ICapabilitiesService } from 'sql/platform/capabilities/common/capabilitiesService';
-import { IModelFactory, ViewMode, NotebookContentChange, INotebookModel } from 'sql/workbench/services/notebook/browser/models/modelInterfaces';
+import { ViewMode, NotebookContentChange, INotebookModel } from 'sql/workbench/services/notebook/browser/models/modelInterfaces';
 import { IConnectionProfile } from 'sql/platform/connection/common/interfaces';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ModelFactory } from 'sql/workbench/services/notebook/browser/models/modelFactory';
@@ -27,6 +27,7 @@ import { Deferred } from 'sql/base/common/promise';
 import { NotebookChangeType } from 'sql/workbench/services/notebook/common/contracts';
 import { localize } from 'vs/nls';
 import * as path from 'vs/base/common/path';
+import { NotebookInput } from 'sql/workbench/contrib/notebook/browser/models/notebookInput';
 
 export const NOTEBOOKEDITOR_SELECTOR: string = 'notebookeditor-component';
 
@@ -47,6 +48,8 @@ export class NotebookEditorComponent extends AngularDisposable {
 	public activeView: INotebookView;
 	public viewMode: ViewMode;
 	public ViewMode = ViewMode; //For use of the enum in the template
+	private readonly _modelFactory: ModelFactory;
+	private _input: NotebookInput;
 
 	constructor(
 		@Inject(IBootstrapParams) private _notebookParams: INotebookParams,
@@ -61,13 +64,14 @@ export class NotebookEditorComponent extends AngularDisposable {
 	) {
 		super();
 		this.updateProfile();
+		this._modelFactory = new ModelFactory(this.instantiationService);
 	}
 	ngOnInit() {
 		this.doLoad().catch(e => onUnexpectedError(e));
 	}
 
 	private updateProfile(): void {
-		this.profile = this._notebookParams ? this._notebookParams.profile : undefined;
+		this.profile = this._notebookParams ? this._input.connectionProfile : undefined;
 	}
 
 	private detectChanges(): void {
@@ -77,11 +81,11 @@ export class NotebookEditorComponent extends AngularDisposable {
 	}
 
 	public get loadingMessage() {
-		return localize('loadingNotebookMessage', "Loading notebook {0}", path.basename(this._notebookParams.notebookUri.path));
+		return localize('loadingNotebookMessage', "Loading notebook {0}", path.basename(this._input.notebookUri.path));
 	}
 
 	public get loadingCompletedMessage() {
-		return localize('loadingNotebookCompletedMessage', "Loading notebook {0} completed", path.basename(this._notebookParams.notebookUri.path));
+		return localize('loadingNotebookCompletedMessage', "Loading notebook {0} completed", path.basename(this._input.notebookUri.path));
 	}
 
 	public get isLoading(): boolean {
@@ -119,25 +123,25 @@ export class NotebookEditorComponent extends AngularDisposable {
 	}
 
 	private async createModelAndLoadContents(): Promise<void> {
-		let providerInfo = await this._notebookParams.providerInfo;
+		let providerInfo = await this._input.getProviderInfo();
 		let model = this.instantiationService.createInstance(NotebookModel, {
-			factory: this.modelFactory,
-			notebookUri: this._notebookParams.notebookUri,
+			factory: this._modelFactory,
+			notebookUri: this._input.notebookUri,
 			connectionService: this.connectionManagementService,
 			notificationService: this.notificationService,
 			serializationManagers: this.serializationManagers,
 			executeManagers: this.executeManagers,
-			contentLoader: this._notebookParams.input.contentLoader,
+			contentLoader: this._input.contentLoader,
 			cellMagicMapper: new CellMagicMapper(this.notebookService.languageMagics),
 			providerId: providerInfo.providerId,
-			defaultKernel: this._notebookParams.input.defaultKernel,
-			layoutChanged: this._notebookParams.input.layoutChanged,
+			defaultKernel: this._input.defaultKernel,
+			layoutChanged: this._input.layoutChanged,
 			capabilitiesService: this.capabilitiesService,
-			editorLoadedTimestamp: this._notebookParams.input.editorOpenedTimestamp,
-			getInputLanguageMode: () => this._notebookParams.input.languageMode // Can't pass in languageMode directly since it can change after the editor loads
+			editorLoadedTimestamp: this._input.editorOpenedTimestamp,
+			getInputLanguageMode: () => this._input.languageMode // Can't pass in languageMode directly since it can change after the editor loads
 		}, this.profile);
 
-		let trusted = await this.notebookService.isNotebookTrustCached(this._notebookParams.notebookUri, this.isDirty());
+		let trusted = await this.notebookService.isNotebookTrustCached(this._input.notebookUri, this.isDirty());
 		this.model = this._register(model);
 		await this.model.loadContents(trusted);
 
@@ -156,17 +160,17 @@ export class NotebookEditorComponent extends AngularDisposable {
 	}
 
 	private async setSerializationManager(): Promise<void> {
-		let providerInfo = await this._notebookParams.providerInfo;
+		let providerInfo = await this._input.getProviderInfo();
 		for (let providerId of providerInfo.providers) {
-			let manager = await this.notebookService.getOrCreateSerializationManager(providerId, this._notebookParams.notebookUri);
+			let manager = await this.notebookService.getOrCreateSerializationManager(providerId, this._input.notebookUri);
 			this.serializationManagers.push(manager);
 		}
 	}
 
 	private async setExecuteManager(): Promise<void> {
-		let providerInfo = await this._notebookParams.providerInfo;
+		let providerInfo = await this._input.getProviderInfo();
 		for (let providerId of providerInfo.providers) {
-			let manager = await this.notebookService.getOrCreateExecuteManager(providerId, this._notebookParams.notebookUri);
+			let manager = await this.notebookService.getOrCreateExecuteManager(providerId, this._input.notebookUri);
 			this.executeManagers.push(manager);
 		}
 	}
@@ -179,12 +183,12 @@ export class NotebookEditorComponent extends AngularDisposable {
 	private async awaitNonDefaultProvider(): Promise<void> {
 		// Wait on registration for now. Long-term would be good to cache and refresh
 		await this.notebookService.registrationComplete;
-		this.model.standardKernels = this._notebookParams.input.standardKernels;
+		this.model.standardKernels = this._input.standardKernels;
 		// Refresh the provider if we had been using default
-		let providerInfo = await this._notebookParams.providerInfo;
+		let providerInfo = await this._input.getProviderInfo();
 
 		if (DEFAULT_NOTEBOOK_PROVIDER === providerInfo.providerId) {
-			let providers = notebookUtils.getProvidersForFileName(this._notebookParams.notebookUri.fsPath, this.notebookService);
+			let providers = notebookUtils.getProvidersForFileName(this._input.notebookUri.fsPath, this.notebookService);
 			let tsqlProvider = providers.find(provider => provider === SQL_NOTEBOOK_PROVIDER);
 			providerInfo.providerId = tsqlProvider ? SQL_NOTEBOOK_PROVIDER : providers[0];
 		}
@@ -205,15 +209,8 @@ export class NotebookEditorComponent extends AngularDisposable {
 		fillInActions(groups, { primary, secondary }, false, g => g === '', Number.MAX_SAFE_INTEGER, (action: SubmenuAction, group: string, groupSize: number) => group === undefined || group === '');
 	}
 
-	private get modelFactory(): IModelFactory {
-		if (!this._notebookParams.modelFactory) {
-			this._notebookParams.modelFactory = new ModelFactory(this.instantiationService);
-		}
-		return this._notebookParams.modelFactory;
-	}
-
 	private isDirty(): boolean {
-		return this._notebookParams.input.isDirty();
+		return this._input.isDirty();
 	}
 
 	public get modelReady(): Promise<INotebookModel> {

@@ -13,7 +13,7 @@ import { UntitledNotebookInput } from 'sql/workbench/contrib/notebook/browser/mo
 import { FileNotebookInput } from 'sql/workbench/contrib/notebook/browser/models/fileNotebookInput';
 import { IConnectionProfile } from 'sql/platform/connection/common/interfaces';
 import { UntitledTextEditorModel } from 'vs/workbench/services/untitled/common/untitledTextEditorModel';
-import { NodeStub, NotebookServiceStub } from 'sql/workbench/contrib/notebook/test/stubs';
+import { NotebookServiceStub } from 'sql/workbench/contrib/notebook/test/stubs';
 import { basenameOrAuthority } from 'vs/base/common/resources';
 import { UntitledTextEditorInput } from 'vs/workbench/services/untitled/common/untitledTextEditorInput';
 import { IExtensionService, NullExtensionService } from 'vs/workbench/services/extensions/common/extensions';
@@ -151,31 +151,6 @@ suite('Notebook Input', function (): void {
 			providerId: testProvider,
 			providers: [testProvider]
 		});
-	});
-
-	test('Parent container', async function (): Promise<void> {
-		// Undefined container
-		let testContainer = undefined;
-		untitledNotebookInput.container = testContainer;
-		assert.strictEqual(untitledNotebookInput.container, testContainer);
-
-		// Dispose old container when setting new one
-		let removedContainer: HTMLElement;
-		let mockParentNode = TypeMoq.Mock.ofType<Node>(NodeStub);
-		mockParentNode.setup(e => e.removeChild(TypeMoq.It.isAny())).returns(oldChild => {
-			removedContainer = oldChild;
-			return oldChild;
-		});
-		testContainer = <HTMLElement>{ parentNode: mockParentNode.object };
-		untitledNotebookInput.container = testContainer;
-		assert.strictEqual(untitledNotebookInput.container, testContainer);
-
-		let oldContainer = testContainer;
-		testContainer = <HTMLElement>{};
-		untitledNotebookInput.container = testContainer;
-		assert.strictEqual(untitledNotebookInput.container, testContainer);
-		mockParentNode.verify(e => e.removeChild(TypeMoq.It.isAny()), TypeMoq.Times.once());
-		assert.strictEqual(removedContainer, oldContainer);
 	});
 
 	test('Matches other input', async function (): Promise<void> {

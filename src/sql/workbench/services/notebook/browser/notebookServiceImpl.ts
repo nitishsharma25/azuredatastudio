@@ -386,7 +386,7 @@ export class NotebookService extends Disposable implements INotebookService {
 		let title = originalTitle;
 		let nextVal = 0;
 		let ext = path.extname(title);
-		while (this.listNotebookEditors().findIndex(doc => path.basename(doc.notebookParams.notebookUri.fsPath) === title) > -1) {
+		while (this.listNotebookEditors().findIndex(doc => path.basename(doc.notebookParams.input.notebookUri.fsPath) === title) > -1) {
 			if (ext) {
 				// Need it to be `Readme-0.txt` not `Readme.txt-0`
 				let titleStart = originalTitle.slice(0, originalTitle.length - ext.length);
@@ -666,7 +666,7 @@ export class NotebookService extends Disposable implements INotebookService {
 		if (this._editors.delete(editor.id)) {
 			this._onNotebookEditorRemove.fire(editor);
 		}
-		this._notebookInputsMap.delete(editor.notebookParams.notebookUri.toString());
+		this._notebookInputsMap.delete(editor.notebookParams.input.notebookUri.toString());
 
 		// Remove the manager from the tracked list, and let the notebook provider know that it should update its mappings
 		this.sendNotebookCloseToProvider(editor);
@@ -685,7 +685,7 @@ export class NotebookService extends Disposable implements INotebookService {
 		let oldUriKey = oldUri.toString();
 		if (this._editors.has(oldUriKey)) {
 			this._editors.delete(oldUriKey);
-			currentEditor.notebookParams.notebookUri = newUri; //currentEditor.id gets this value as a string
+			currentEditor.notebookParams.input.notebookUri = newUri; //currentEditor.id gets this value as a string
 			this._editors.set(currentEditor.id, currentEditor);
 			this._onNotebookEditorRename.fire(currentEditor);
 		}
@@ -704,7 +704,7 @@ export class NotebookService extends Disposable implements INotebookService {
 	// PRIVATE HELPERS /////////////////////////////////////////////////////
 
 	private sendNotebookCloseToProvider(editor: INotebookEditor): void {
-		let notebookUri = editor.notebookParams.notebookUri;
+		let notebookUri = editor.notebookParams.input.notebookUri;
 		let uriString = notebookUri.toString();
 		let managers = this._executeManagersMap.get(uriString);
 		if (managers) {

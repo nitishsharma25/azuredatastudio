@@ -9,8 +9,6 @@ import { Event } from 'vs/base/common/event';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { RenderMimeRegistry } from 'sql/workbench/services/notebook/browser/outputs/registry';
-import { ModelFactory } from 'sql/workbench/services/notebook/browser/models/modelFactory';
-import { IConnectionProfile } from 'sql/platform/connection/common/interfaces';
 import { INotebookEditOperation } from 'sql/workbench/api/common/sqlExtHostTypes';
 import { ICellModel, INotebookModel } from 'sql/workbench/services/notebook/browser/models/modelInterfaces';
 import { NotebookChangeType, CellType } from 'sql/workbench/services/notebook/common/contracts';
@@ -18,12 +16,12 @@ import { IBootstrapParams } from 'sql/workbench/services/bootstrap/common/bootst
 import { BaseTextEditor } from 'vs/workbench/browser/parts/editor/textEditor';
 import { Range } from 'vs/editor/common/core/range';
 import { IEditorPane } from 'vs/workbench/common/editor';
-import { INotebookInput } from 'sql/workbench/services/notebook/browser/interface';
 import { INotebookShowOptions } from 'sql/workbench/api/common/sqlExtHost.protocol';
 import { NotebookViewsExtension } from 'sql/workbench/services/notebook/browser/notebookViews/notebookViewsExtension';
 import { ICodeEditorViewState } from 'vs/editor/common/editorCommon';
 import { JUPYTER_PROVIDER_ID } from 'sql/workbench/common/constants';
 import { IStandardKernelWithProvider } from 'sql/workbench/services/notebook/browser/models/notebookUtils';
+import { NotebookInput } from 'sql/workbench/contrib/notebook/browser/models/notebookInput';
 
 export const SERVICE_ID = 'sqlNotebookService';
 export const INotebookService = createDecorator<INotebookService>(SERVICE_ID);
@@ -177,11 +175,8 @@ export interface IProviderInfo {
 }
 
 export interface INotebookParams extends IBootstrapParams {
-	notebookUri: URI;
-	input: INotebookInput;
-	providerInfo: Promise<IProviderInfo>;
-	profile?: IConnectionProfile;
-	modelFactory?: ModelFactory;
+	input?: NotebookInput;
+	inputUpdated?: Event<NotebookInput>;
 }
 
 /**
