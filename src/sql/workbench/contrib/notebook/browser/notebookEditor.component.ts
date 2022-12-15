@@ -63,10 +63,10 @@ export class NotebookEditorComponent extends AngularDisposable {
 		@Inject(IConnectionManagementService) private connectionManagementService: IConnectionManagementService,
 	) {
 		super();
-		this.updateProfile();
 		this._modelFactory = new ModelFactory(this.instantiationService);
 		this._notebookParams.inputUpdated(input => {
 			this._notebookParams.input = input;
+			this.updateProfile();
 			this.doLoad().catch(e => onUnexpectedError(e));
 		})
 	}
